@@ -1,0 +1,13 @@
+.env
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
+service_appointments.csv
+test_drive_bookings.csv
+test_bot.py

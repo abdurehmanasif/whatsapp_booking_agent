@@ -1,0 +1,178 @@
+{
+    "Riyadh": [
+        {
+            "id": 1,
+            "name": "Lucid Motors Riyadh Service Center",
+            "address": "King Fahd Road, Al Olaya District, Riyadh 12345, Saudi Arabia",
+            "working_hours": "09:00–18:00",
+            "offer_test_drive": true,
+            "timeslots": [
+                {
+                    "date": "2025-01-19",
+                    "slots": [
+                        {
+                            "time": "10:00",
+                            "available": true
+                        },
+                        {
+                            "time": "14:00",
+                            "available": true
+                        },
+                        {
+                            "time": "16:00",
+                            "available": true
+                        }
+                    ]
+                },
+                {
+                    "date": "2025-01-20",
+                    "slots": [
+                        {
+                            "time": "11:00",
+                            "available": true
+                        },
+                        {
+                            "time": "15:00",
+                            "available": true
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "Al Khobar": [
+        {
+            "id": 7,
+            "name": "Lucid Motors Khobar Service Center",
+            "address": "Prince Turki Bin Abdulaziz Street, Al Corniche, Al Khobar 34612, Saudi Arabia",
+            "working_hours": "08:30–17:30",
+            "offer_test_drive": true,
+            "timeslots": [
+                {
+                    "date": "2025-01-19",
+                    "slots": [
+                        {
+                            "time": "10:00",
+                            "available": true
+                        },
+                        {
+                            "time": "14:00",
+                            "available": true
+                        }
+                    ]
+                },
+                {
+                    "date": "2025-01-20",
+                    "slots": [
+                        {
+                            "time": "09:00",
+                            "available": true
+                        },
+                        {
+                            "time": "13:00",
+                            "available": false
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "Jeddah": [
+        {
+            "id": 2,
+            "name": "Lucid Motors Jeddah Service Center",
+            "address": "Prince Sultan Road, Al Zahra District, Jeddah 21442, Saudi Arabia",
+            "working_hours": "09:00–18:00",
+            "offer_test_drive": true,
+            "timeslots": [
+                {
+                    "date": "2025-07-12",
+                    "slots": [
+                        {
+                            "time": "09:30",
+                            "available": true
+                        },
+                        {
+                            "time": "15:00",
+                            "available": true
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "Dammam": [
+        {
+            "id": 3,
+            "name": "Lucid Motors Dammam Service Center",
+            "address": "King Abdullah Bin Abdulaziz Road, Al Faisaliyah, Dammam 32271, Saudi Arabia",
+            "working_hours": "09:00–17:00",
+            "offer_test_drive": false,
+            "timeslots": []
+        }
+    ],
+    "Mecca": [
+        {
+            "id": 4,
+            "name": "Lucid Motors Mecca Service Center",
+            "address": "Umm Al Qura Road, Al Aziziyah, Mecca 24243, Saudi Arabia",
+            "working_hours": "10:00–19:00",
+            "offer_test_drive": true,
+            "timeslots": [
+                {
+                    "date": "2025-07-13",
+                    "slots": [
+                        {
+                            "time": "12:00",
+                            "available": true
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "Medina": [
+        {
+            "id": 5,
+            "name": "Lucid Motors Medina Service Center",
+            "address": "King Faisal Road, Qurban, Medina 42315, Saudi Arabia",
+            "working_hours": "08:00–17:00",
+            "offer_test_drive": false,
+            "timeslots": []
+        }
+    ],
+    "Taif": [
+        {
+            "id": 6,
+            "name": "Lucid Motors Taif Service Center",
+            "address": "Airport Road, Al Rehab District, Taif 26523, Saudi Arabia",
+            "working_hours": "09:00–18:00",
+            "offer_test_drive": true,
+            "timeslots": [
+                {
+                    "date": "2025-07-12",
+                    "slots": [
+                        {
+                            "time": "11:00",
+                            "available": true
+                        },
+                        {
+                            "time": "16:00",
+                            "available": false
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "Abha": [
+        {
+            "id": 7,
+            "name": "Lucid Motors Abha Service Center",
+            "address": "King Abdulaziz Road, Al Khalidiyah, Abha 62571, Saudi Arabia",
+            "working_hours": "09:00–18:00",
+            "offer_test_drive": false,
+            "timeslots": []
+        }
+    ]
+}

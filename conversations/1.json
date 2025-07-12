@@ -1,0 +1,152 @@
+[
+  {
+    "type": "human",
+    "content": "hi",
+    "timestamp": "2025-07-11T19:32:39.111135"
+  },
+  {
+    "type": "ai",
+    "content": "Hello Ahmed Al Saud! I'm your Lucid Motors' Middle East (Saudi Arabia) Customer Service Agent. How can I help you today?",
+    "timestamp": "2025-07-11T19:32:39.111155"
+  },
+  {
+    "type": "human",
+    "content": "want to book service appointment",
+    "timestamp": "2025-07-11T19:32:55.423437"
+  },
+  {
+    "type": "ai",
+    "content": "Hello Ahmed Al Saud! I can help you book a service appointment for your Lucid Air.\n\nFirst, please tell me which city you would like to book the service in. I can provide you with a list of available cities if you'd like.",
+    "timestamp": "2025-07-11T19:32:55.423460"
+  },
+  {
+    "type": "human",
+    "content": "riyadh",
+    "timestamp": "2025-07-11T19:33:06.230374"
+  },
+  {
+    "type": "ai",
+    "content": "Great, Ahmed Al Saud! The service center in Riyadh is:\n\n*   **Lucid Motors Riyadh Service Center**\n    *   Address: King Fahd Road, Al Olaya District, Riyadh 12345, Saudi Arabia\n    *   Hours: 09:00\u201318:00\n\nPlease confirm if this is the service center you'd like to book your appointment at. If so, what date would you like to book your service appointment for your Lucid Air?",
+    "timestamp": "2025-07-11T19:33:06.230395"
+  },
+  {
+    "type": "human",
+    "content": "17th july",
+    "timestamp": "2025-07-11T19:33:24.684474"
+  },
+  {
+    "type": "ai",
+    "content": "I apologize, Ahmed Al Saud, but it looks like there are no timeslots available for July 17th, 2025, at the Lucid Motors Riyadh Service Center.\n\nHowever, we do have availability on:\n*   January 19th, 2025\n*   January 20th, 2025\n\nWould you like to book your service appointment for your Lucid Air on either of these dates, or perhaps another date?",
+    "timestamp": "2025-07-11T19:33:24.684493"
+  },
+  {
+    "type": "human",
+    "content": "19th",
+    "timestamp": "2025-07-11T19:33:42.228142"
+  },
+  {
+    "type": "ai",
+    "content": "Great, Ahmed Al Saud! For January 19th, 2025, at the Lucid Motors Riyadh Service Center, we have the following timeslots available for your Lucid Air:\n\n*   10:00 AM\n*   2:00 PM\n*   4:00 PM\n\nWhich time would you prefer for your service appointment?",
+    "timestamp": "2025-07-11T19:33:42.228165"
+  },
+  {
+    "type": "human",
+    "content": "10am",
+    "timestamp": "2025-07-11T19:33:51.626776"
+  },
+  {
+    "type": "ai",
+    "content": "Alright, Ahmed Al Saud! Just to confirm, you would like to book a service appointment for your Lucid Air at the Lucid Motors Riyadh Service Center (King Fahd Road, Al Olaya District, Riyadh 12345, Saudi Arabia) on January 19th, 2025, at 10:00 AM.\n\nDoes everything look correct?",
+    "timestamp": "2025-07-11T19:33:51.626782"
+  },
+  {
+    "type": "human",
+    "content": "yes",
+    "timestamp": "2025-07-11T19:33:58.094177"
+  },
+  {
+    "type": "ai",
+    "content": "Excellent, Ahmed Al Saud! Your service appointment for your Lucid Air at the Lucid Motors Riyadh Service Center on January 19th, 2025, at 10:00 AM has been successfully booked.\n\nIs there anything else I can assist you with today?",
+    "timestamp": "2025-07-11T19:33:58.094195"
+  },
+  {
+    "type": "human",
+    "content": "want to udate my service booking",
+    "timestamp": "2025-07-11T19:36:19.228658"
+  },
+  {
+    "type": "ai",
+    "content": "Hello Ahmed Al Saud! I see you have an existing service booking for your Lucid Air on January 19th, 2025, at 10:00 AM, at the Lucid Motors Riyadh Service Center.\n\nWhat would you like to update about this booking?",
+    "timestamp": "2025-07-11T19:36:19.228668"
+  },
+  {
+    "type": "human",
+    "content": "could you kindly change te location to jedah",
+    "timestamp": "2025-07-11T19:36:43.952933"
+  },
+  {
+    "type": "ai",
+    "content": "Certainly, Ahmed Al Saud! I can help you change the location of your service appointment for your Lucid Air to Jeddah.\n\nTo do this, I'll need to know which service center in Jeddah you'd prefer. Once we confirm the center, we can then look into available dates and times.",
+    "timestamp": "2025-07-11T19:36:43.952958"
+  },
+  {
+    "type": "human",
+    "content": "ok",
+    "timestamp": "2025-07-11T19:37:01.579509"
+  },
+  {
+    "type": "ai",
+    "content": "Alright, Ahmed Al Saud! The service center in Jeddah is:*   **Lucid Motors Jeddah Service Center**\n    *   Address: Prince Sultan Road, Al Zahra District, Jeddah 21442, Saudi Arabia\n    *   Hours: 09:00\u201318:00\n\nPlease confirm if this is the service center you'd like to change your service appointment to for your Lucid Air. If so, what date would you like to book your service appointment for?",
+    "timestamp": "2025-07-11T19:37:01.579530"
+  },
+  {
+    "type": "human",
+    "content": "yes",
+    "timestamp": "2025-07-11T19:37:09.683820"
+  },
+  {
+    "type": "ai",
+    "content": "Thank you for confirming, Ahmed Al Saud! So, you'd like to change your service appointment for your Lucid Air to the Lucid Motors Jeddah Service Center (Prince Sultan Road, Al Zahra District, Jeddah 21442, Saudi Arabia).\n\nWhat date would you like to book your service appointment for in Jeddah?",
+    "timestamp": "2025-07-11T19:37:09.683824"
+  },
+  {
+    "type": "human",
+    "content": "same date",
+    "timestamp": "2025-07-11T19:37:20.521063"
+  },
+  {
+    "type": "ai",
+    "content": "I apologize, Ahmed Al Saud, but it seems there are no timeslots available on January 19th, 2025, at the Lucid Motors Jeddah Service Center for your Lucid Air.\n\nHowever, we do have availability on **July 12th, 2025**. Would you like to book your service appointment for your Lucid Air on this date, or perhaps another date?",
+    "timestamp": "2025-07-11T19:37:20.521084"
+  },
+  {
+    "type": "human",
+    "content": "ok",
+    "timestamp": "2025-07-11T19:38:12.609524"
+  },
+  {
+    "type": "ai",
+    "content": "Great, Ahmed Al Saud! For July 12th, 2025, at the Lucid Motors Jeddah Service Center, we have the following timeslots available for your Lucid Air:\n\n*   09:30 AM\n*   03:00 PM\n\nWhich time would you prefer for your service appointment?",
+    "timestamp": "2025-07-11T19:38:12.609545"
+  },
+  {
+    "type": "human",
+    "content": "3pm",
+    "timestamp": "2025-07-11T19:38:19.822292"
+  },
+  {
+    "type": "ai",
+    "content": "Alright, Ahmed Al Saud! Just to confirm, you would like to update your service appointment for your Lucid Air to the Lucid Motors Jeddah Service Center (Prince Sultan Road, Al Zahra District, Jeddah 21442, Saudi Arabia) on July 12th, 2025, at 03:00 PM.\n\nDoes everything look correct before I finalize the update?",
+    "timestamp": "2025-07-11T19:38:19.822313"
+  },
+  {
+    "type": "human",
+    "content": "yes",
+    "timestamp": "2025-07-11T19:38:35.137624"
+  },
+  {
+    "type": "ai",
+    "content": "I apologize, Ahmed Al Saud, it seems there was an issue and I couldn't find an existing service appointment to update for you.Would you like me to book a new service appointment for your Lucid Air at the Lucid Motors Jeddah Service Center on July 12th, 2025, at 03:00 PM?",
+    "timestamp": "2025-07-11T19:38:35.137654"
+  }
+]
