@@ -10,6 +10,7 @@ from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 import pandas as pd
 import json
 import os
+import re
 from datetime import datetime
 from typing import Dict, Any
 import logging
@@ -119,10 +120,19 @@ init_csv_files()
 def get_user_info(user_id: Any) -> Dict[str, Any]:
     """Get user information from CSV"""
     try:
-        user_id_str = str(user_id).strip()
-        users_df = pd.read_csv(USERS_CSV)
-        users_df["user_id"] = users_df["user_id"].astype(str)
-        user_row = users_df[users_df["user_id"] == user_id_str]
+        user_id_str = _normalize_user_id(user_id)
+
+        # Load as string to keep leading zeros, then normalise both id columns
+        users_df = pd.read_csv(USERS_CSV, dtype=str)
+        for col in ("user_id", "phone_number"):
+            if col in users_df.columns:
+                users_df[col] = users_df[col].apply(_normalize_user_id)
+
+        # Match on either column
+        user_row = users_df[
+            (users_df["user_id"] == user_id_str)
+            | (users_df["phone_number"] == user_id_str)
+        ]
 
         if not user_row.empty:
             return user_row.iloc[0].to_dict()
@@ -134,6 +144,23 @@ def get_user_info(user_id: Any) -> Dict[str, Any]:
         "name": "Customer",
         "car_model": "Unknown",
     }
+
+
+def _normalize_user_id(user_id: Any) -> str:
+    if user_id is None:
+        return ""
+    """
+    Convert anything that represents a phone number
+    (e.g. 'whatsapp:+923304641960', '+92 330 464 1960', 923304641960.0)
+    into a clean digit-only string.
+    """
+    if user_id is None:
+        return ""
+    user_str = str(user_id)
+    # Remove Twilio prefix if present
+    user_str = user_str.replace("whatsapp:", "")
+    # Keep digits only
+    return re.sub(r"\D", "", user_str)
 
 
 def load_conversation_history(user_id: Any) -> list:
@@ -167,6 +194,39 @@ def load_service_centers() -> list:
 
 # Tools/Functions
 @tool
+def register_user(user_id: Any, name: str, car_model: str) -> str:
+    """Register a new user"""
+    user_id_str = _normalize_user_id(user_id)
+    # Load or create the users DataFrame with columns as strings
+    if os.path.exists(USERS_CSV):
+        df = pd.read_csv(USERS_CSV, dtype=str)
+    else:
+        df = pd.DataFrame(columns=["user_id", "phone_number", "name", "car_model"])
+
+    # Normalise ID columns for reliable comparison
+    for col in ("user_id", "phone_number"):
+        if col in df.columns:
+            df[col] = df[col].apply(_normalize_user_id)
+
+    # Check if the user already exists by ID or phone number
+    if not df[
+        (df["user_id"] == user_id_str) | (df.get("phone_number", "") == user_id_str)
+    ].empty:
+        return (
+            "You are already registered. Would you like to book a service appointment?"
+        )
+    new_user = {
+        "user_id": user_id_str,
+        "phone_number": user_id_str,  # phone number is canonical ID
+        "name": name.strip(),
+        "car_model": car_model.strip(),
+    }
+    df = pd.concat([df, pd.DataFrame([new_user])], ignore_index=True)
+    df.to_csv(USERS_CSV, index=False)
+    return "You are now registered. Would you like to book a service appointment?"
+
+
+@tool
 def book_service_appointment(
     user_id: Any,
     name: str,
@@ -178,21 +238,38 @@ def book_service_appointment(
 ) -> str:
     """Book a car service appointment"""
     try:
+        # Validate inputs
+        if not all([user_id, name, city, center_address, car_model, date, time_slot]):
+            return "Missing required information. Please provide all details."
+
+        # Convert user_id to string for consistency
+        user_id_str = _normalize_user_id(user_id)
+
         df = pd.read_csv(SERVICE_BOOKINGS_CSV)
 
-        # Check if user already has a booking
-        existing = df[df["user_id"] == user_id]
+        # Convert user_id column to string for comparison
+        if not df.empty:
+            df["user_id"] = df["user_id"].apply(_normalize_user_id)
+
+        # Check if user already has an active booking
+        existing = df[(df["user_id"] == user_id_str) & (df["status"] != "cancelled")]
         if not existing.empty:
-            return "You already have a service appointment booked. Would you like to update it instead?"
+            return "You already have an active service appointment. Would you like to update or cancel it first?"
+
+        # Validate date format
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            return "Invalid date format. Please use YYYY-MM-DD format."
 
         new_booking = {
-            "user_id": user_id,
-            "name": name,
-            "city": city,
-            "center_address": center_address,
-            "car_model": car_model,
+            "user_id": user_id_str,
+            "name": name.strip(),
+            "city": city.strip(),
+            "center_address": center_address.strip(),
+            "car_model": car_model.strip(),
             "date": date,
-            "time_slot": time_slot,
+            "time_slot": time_slot.strip(),
             "booking_id": str(uuid.uuid4()),
             "status": "pending",
             "created_at": datetime.now().isoformat(),
@@ -202,7 +279,8 @@ def book_service_appointment(
         df = pd.concat([df, pd.DataFrame([new_booking])], ignore_index=True)
         df.to_csv(SERVICE_BOOKINGS_CSV, index=False)
 
-        return f"Service appointment booked successfully for {date} at {time_slot} in {city}."
+        return f"✅ Service appointment booked successfully!\n📅 Date: {date}\n🕐 Time: {time_slot}\n📍 Location: {city}\n🏢 Center: {center_address}"
+
     except Exception as e:
         logger.error(f"Error booking service appointment: {e}")
         return "Sorry, there was an error booking your appointment. Please try again."
@@ -229,53 +307,110 @@ def get_service_centers(city: str) -> str:
 
 
 @tool
-def get_cities() -> str:
-    """Get all cities"""
-    service_centers = load_service_centers()
-    cities = list(service_centers.keys())
-    return f"Cities with Lucid Motors service centers: {', '.join(cities)}"
+def get_cities_with_availability() -> str:
+    """Get cities with available test drive slots - enhanced version"""
+    try:
+        service_centers = load_service_centers()
+        result = "🏙️ **Available Cities for Test Drives:**\n\n"
+
+        for city, centers in service_centers.items():
+            result += f"📍 **{city}**\n"
+            for center in centers:
+                if center.get("offer_test_drive", False):
+                    result += f"   • {center['name']}\n"
+                    result += f"     📍 {center['address']}\n"
+
+                    # Show available dates
+                    available_dates = []
+                    for timeslot_data in center.get("timeslots", []):
+                        available_slots = [
+                            slot for slot in timeslot_data["slots"] if slot["available"]
+                        ]
+                        if available_slots:
+                            available_dates.append(timeslot_data["date"])
+
+                    if available_dates:
+                        result += (
+                            f"     📅 Available dates: {', '.join(available_dates[:3])}"
+                        )
+                        if len(available_dates) > 3:
+                            result += f" (and {len(available_dates) - 3} more)"
+                        result += "\n"
+                    else:
+                        result += "     ❌ No available slots currently\n"
+            result += "\n"
+
+        return result
+    except Exception as e:
+        logger.error(f"Error getting cities with availability: {e}")
+        return (
+            "Sorry, there was an error retrieving available cities. Please try again."
+        )
 
 
 @tool
 def get_available_timeslots(city: str, date: str) -> str:
     """Get available timeslots for a city on a given date"""
-    service_centers = load_service_centers()
-    if city not in service_centers:
-        return f"No service center found in {city}"
+    try:
+        service_centers = load_service_centers()
+        city_clean = city.strip()
 
-    centers = service_centers.get(city)
-    if not centers:
-        return f"No service center found in {city}"
+        if city_clean not in service_centers:
+            available_cities = list(service_centers.keys())
+            return f"❌ No service center found in {city_clean}.\n🏙️ Available cities: {', '.join(available_cities)}"
 
-    result = f"Available timeslots for {date} in {city}:\n"
+        centers = service_centers.get(city_clean, [])
+        if not centers:
+            return f"❌ No service centers available in {city_clean}"
 
-    for center in centers:
-        result += f"\n{center['name']}:\n"
+        # Validate date format
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            return "❌ Invalid date format. Please use YYYY-MM-DD format (e.g., 2025-07-19)"
 
-        # Find matching date in timeslots
-        date_found = False
-        for timeslot_data in center.get("timeslots", []):
-            if timeslot_data["date"] == date:
-                date_found = True
-                available_slots = [
-                    slot for slot in timeslot_data["slots"] if slot["available"]
-                ]
-                if available_slots:
-                    result += "  Available times:\n"
-                    for slot in available_slots:
-                        result += f"  • {slot['time']}\n"
-                else:
-                    result += "  No available slots for this date\n"
-                break
+        result = f"📅 Available timeslots for {date} in {city_clean}:\n\n"
+        has_available_slots = False
 
-        if not date_found:
-            result += f"  No timeslots available for {date}\n"
-            # Show available dates
-            available_dates = [ts["date"] for ts in center.get("timeslots", [])]
-            if available_dates:
-                result += f"  Available dates: {', '.join(available_dates)}\n"
+        for center in centers:
+            result += f"🏢 **{center['name']}**\n"
+            result += f"📍 {center['address']}\n"
+            result += f"🕐 Hours: {center['working_hours']}\n"
 
-    return result
+            # Find matching date in timeslots
+            date_found = False
+            for timeslot_data in center.get("timeslots", []):
+                if timeslot_data["date"] == date:
+                    date_found = True
+                    available_slots = [
+                        slot for slot in timeslot_data["slots"] if slot["available"]
+                    ]
+                    if available_slots:
+                        result += "✅ **Available times:**\n"
+                        for slot in available_slots:
+                            result += f"   • {slot['time']}\n"
+                        has_available_slots = True
+                    else:
+                        result += "❌ No available slots for this date\n"
+                    break
+
+            if not date_found:
+                result += f"❌ No timeslots available for {date}\n"
+                # Show available dates
+                available_dates = [ts["date"] for ts in center.get("timeslots", [])]
+                if available_dates:
+                    result += f"📅 Available dates: {', '.join(available_dates)}\n"
+
+            result += "\n"
+
+        if not has_available_slots:
+            result += "💡 **Suggestion:** Try a different date or check available dates listed above."
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Error getting timeslots: {e}")
+        return "Sorry, there was an error retrieving available timeslots. Please try again."
 
 
 @tool
@@ -290,15 +425,22 @@ def book_test_drive(
 ) -> str:
     """Book a test drive appointment"""
     try:
+        # Normalize user_id
+        user_id_str = _normalize_user_id(user_id)
+
         df = pd.read_csv(TEST_DRIVE_BOOKINGS_CSV)
 
+        # Normalize user_id column for comparison
+        if not df.empty:
+            df["user_id"] = df["user_id"].apply(_normalize_user_id)
+
         # Check if user already has a booking
-        existing = df[df["user_id"] == user_id]
+        existing = df[(df["user_id"] == user_id_str) & (df["status"] != "cancelled")]
         if not existing.empty:
             return "You already have a test drive booked. Would you like to update it instead?"
 
         new_booking = {
-            "user_id": user_id,
+            "user_id": user_id_str,
             "name": name,
             "city": city,
             "center_address": center_address,
@@ -332,8 +474,11 @@ def update_service_appointment(
 ) -> str:
     """Update an existing service appointment"""
     try:
+        user_id_str = _normalize_user_id(user_id)
         df = pd.read_csv(SERVICE_BOOKINGS_CSV)
-        user_booking = df[df["user_id"] == user_id]
+        if not df.empty:
+            df["user_id"] = df["user_id"].apply(_normalize_user_id)
+        user_booking = df[df["user_id"] == user_id_str]
 
         if user_booking.empty:
             return "You don't have any service appointment to update. Would you like to book one?"
@@ -357,7 +502,8 @@ def update_service_appointment(
             updates["status"] = "pending"
             updates["updated_at"] = datetime.now().isoformat()
             for key, value in updates.items():
-                df.loc[df["user_id"] == user_id, key] = value
+                # Use normalized user_id_str to ensure accurate row selection
+                df.loc[df["user_id"] == user_id_str, key] = value
 
             df.to_csv(SERVICE_BOOKINGS_CSV, index=False)
 
@@ -375,7 +521,10 @@ def update_service_appointment(
 def get_user_test_drive_bookings(user_id: Any) -> str:
     """Get user test drive bookings"""
     df = pd.read_csv(TEST_DRIVE_BOOKINGS_CSV)
-    user_bookings = df[df["user_id"] == user_id]
+    if not df.empty:
+        df["user_id"] = df["user_id"].apply(_normalize_user_id)
+    user_id_str = _normalize_user_id(user_id)
+    user_bookings = df[df["user_id"] == user_id_str]
 
     if user_bookings.empty:
         return f"No test drive bookings found for user {user_id}."
@@ -397,7 +546,10 @@ def get_user_test_drive_bookings(user_id: Any) -> str:
 def get_user_service_bookings(user_id: Any) -> str:
     """Get user service bookings"""
     df = pd.read_csv(SERVICE_BOOKINGS_CSV)
-    user_bookings = df[df["user_id"] == user_id]
+    user_id_str = _normalize_user_id(user_id)
+    if not df.empty:
+        df["user_id"] = df["user_id"].apply(_normalize_user_id)
+    user_bookings = df[df["user_id"] == user_id_str]
 
     if user_bookings.empty:
         return f"No service bookings found for user {user_id}."
@@ -420,16 +572,54 @@ def cancel_test_drive(user_id: Any) -> str:
     """Cancel a test drive appointment (status -> cancelled)"""
     try:
         df = pd.read_csv(TEST_DRIVE_BOOKINGS_CSV)
-        user_bookings = df[df["user_id"] == user_id]
+        user_id_str = _normalize_user_id(user_id)
+        if not df.empty:
+            df["user_id"] = df["user_id"].apply(_normalize_user_id)
+        user_bookings = df[df["user_id"] == user_id_str]
         if user_bookings.empty:
             return "You don't have any test drive to cancel."
         else:
-            df.loc[df["user_id"] == user_id, "status"] = "cancelled"
+            # Use normalized user_id_str to ensure accurate row selection
+            df.loc[df["user_id"] == user_id_str, "status"] = "cancelled"
             df.to_csv(TEST_DRIVE_BOOKINGS_CSV, index=False)
             return "Test drive cancelled successfully."
     except Exception as e:
         logger.error(f"Error cancelling test drive: {e}")
         return "Sorry, there was an error cancelling your test drive. Please try again."
+
+
+@tool
+def cancel_service_appointment(user_id: Any) -> str:
+    """Cancel a service appointment"""
+    try:
+        user_id_str = _normalize_user_id(user_id)
+        df = pd.read_csv(SERVICE_BOOKINGS_CSV)
+        if not df.empty:
+            df["user_id"] = df["user_id"].apply(_normalize_user_id)
+
+        user_bookings = df[
+            (df["user_id"] == user_id_str) & (df["status"] != "cancelled")
+        ]
+
+        if user_bookings.empty:
+            return "❌ You don't have any active service appointments to cancel."
+
+        # Cancel the booking
+        df.loc[
+            (df["user_id"] == user_id_str) & (df["status"] != "cancelled"), "status"
+        ] = "cancelled"
+        df.loc[
+            (df["user_id"] == user_id_str) & (df["status"] == "cancelled"), "updated_at"
+        ] = datetime.now().isoformat()
+        df.to_csv(SERVICE_BOOKINGS_CSV, index=False)
+
+        return "✅ Service appointment cancelled successfully."
+
+    except Exception as e:
+        logger.error(f"Error cancelling service appointment: {e}")
+        return (
+            "Sorry, there was an error cancelling your appointment. Please try again."
+        )
 
 
 @tool
@@ -445,7 +635,12 @@ def update_test_drive(
     """Update an existing test drive appointment"""
     try:
         df = pd.read_csv(TEST_DRIVE_BOOKINGS_CSV)
-        user_booking = df[df["user_id"] == user_id]
+        # Ensure consistent string comparison for user_id
+        if not df.empty:
+            df["user_id"] = df["user_id"].apply(_normalize_user_id)
+
+        user_id_str = _normalize_user_id(user_id)
+        user_booking = df[df["user_id"] == user_id_str]
 
         if user_booking.empty:
             return (
@@ -471,7 +666,8 @@ def update_test_drive(
             updates["status"] = "pending"
             updates["updated_at"] = datetime.now().isoformat()
             for key, value in updates.items():
-                df.loc[df["user_id"] == user_id, key] = value
+                # Use normalized user_id_str to ensure accurate row selection
+                df.loc[df["user_id"] == user_id_str, key] = value
 
             df.to_csv(TEST_DRIVE_BOOKINGS_CSV, index=False)
 
@@ -495,74 +691,101 @@ tools = [
     get_user_test_drive_bookings,
     get_user_service_bookings,
     cancel_test_drive,
+    cancel_service_appointment,
     get_available_timeslots,
-    get_cities,
+    get_cities_with_availability,
+    register_user,
 ]
 
 system_prompt = """You are Lucid Motors' Middle East (Saudi Arabia) Customer Service Agent. You can help users:
 1. Book car service appointments
 2. Book test drive appointments  
-3. Updating or cancelling existing bookings
-4. Viewing or resending booking details
+3. Update or cancel existing bookings
+4. View booking details and status
 
-Guidelines:
-- Always use the user's name and car model after getting the user profile
-- Be conversational and friendly
-- If user greets you, greet them back appropriately and ask them how you can help them.
-- Ask for required information step by step: city, center address, date, time slot
-- Always confirm all details before booking
-- For updates, ask what they want to change
-- If user has existing bookings, inform them appropriately
-- Keep responses concise and helpful
-- Never ask the user to tell them city, car model, date, timeslot, center address from themselves, always use the tools to get the options and ask them to choose where you can.
-- If user asks about Lucid Motors, introduce yourself as the customer service agent and tell them that you are here to help them with their bookings
-- Lucid Motors is a car company that sells electric cars, currently selling the Lucid Air, Lucid Air Grand Touring and Lucid Gravity.
+**PERSONALITY & TONE:**
+- Be warm, professional, and helpful
+- Use appropriate emojis for better engagement
+- Address users by their first name when possible and tell them what car they have
+- Be conversational but efficient
 
-IMPORTANT DATE HANDLING:
-- When user provides a date like "19th july", convert it to YYYY-MM-DD format (e.g., "2025-07-19")
-- Always assume current year is 2025 unless user specifies otherwise
-- Use get_available_timeslots to check what dates and times are actually available
-- If requested date has no slots, suggest available alternatives
+**WORKFLOW GUIDELINES:**
+When user wants to book a service appointment or test drive:
+1. Greet them warmly and acknowledge their interest
+2. IMMEDIATELY use get_cities_with_availability to show all available cities and dates
+3. Let user choose their preferred city
+4. Once city is selected, automatically get available timeslots for their preferred date
+5. Show them all available options before asking them to choose
+6. Confirm all details before booking
 
-You have access to the following tools:
-- book_service_appointment: Book a car service appointment
-- book_test_drive: Book a test drive appointment.
-- update_service_appointment: Update an existing service appointment.
-- update_test_drive: Update an existing test drive appointment.
-- get_service_centers: Get service centers in a city
-- get_user_test_drive_bookings: Get user's existing test drive bookings
-- get_user_service_bookings: Get user's existing service bookings
-- cancel_test_drive: Cancel a test drive appointment
-- get_available_timeslots: Get available timeslots for a service center on a given date
-- get_cities: Get all cities
+When user wants to update a booking (service or test drive):
+1. FIRST check their current bookings using get_user_test_drive_bookings or get_user_service_bookings
+2. Show them their current booking details
+3. Ask what they want to change (city, date, time)
+4. Provide available options for the change they want to make
+5. Update the booking with confirmation
 
-Required information for booking:
-- City (always use get_cities to get the list of cities with service centers/test drive centers)
-- Car model (if not provided in the user profile, ask for it)
-- Service/Test Drive Center (always use get_service_centers to get the list of service centers in a city)
-- Center address (always use get_service_centers to get the list of service centers in a city)
-- Date (format: YYYY-MM-DD) (use get_available_timeslots to get the list of available timeslots for a service center on a given date)
-- Time slot (format: HH:MM AM/PM) (use get_available_timeslots to get the list of available timeslots for a service center on a given date)
+**CRITICAL RULES:**
+- NEVER ask users to provide information you can get from tools
+- ALWAYS show available options BEFORE asking users to choose
+- ALWAYS use get_cities_with_availability for initial city selection
+- ALWAYS convert dates to YYYY-MM-DD format (assume 2025 if year not specified)
+- ALWAYS validate information before booking
+- If timeslots are unavailable, suggest alternatives immediately
+- When updating, ALWAYS show current booking first
 
-All bookings/updates tools require the following information:
-- user_id (provider in the user profile)
-- name (provider in the user profile)
-- city (always use get_cities to get the list of cities with service centers/test drive centers)
-- center_address (always use get_service_centers to get the list of service centers in a city)
-- car_model (if not provided in the user profile, ask for it)
-- date (format: YYYY-MM-DD) (use get_available_timeslots to get the list of available timeslots for a service center on a given date)
-- time_slot (format: HH:MM AM/PM) (use get_available_timeslots to get the list of available timeslots for a service center on a given date)
-- booking_id (generated by the tool)
-- status (pending, cancelled, completed)
+**REGISTRATION RULES:**
+• `user_id` **is the caller's WhatsApp phone number (digits only); it is the same value as `phone_number`.** Treat them interchangeably.
+• If the user is not found in the database (i.e. not registered), complete the requested booking / update flow first.
+• At the END of that flow politely ask: "Would you like to register so we can serve you faster next time?".
+• If the user says **YES**, use the information you already have (name, car model, phone number) and call `register_user`.
+• Ask the user for their name and car model if not provided.(Customer is not a valid name)
+• If any required field is still missing, ask specifically for it before calling `register_user`.
+• Confirm successful registration back to the user.
 
-Always confirm all details before calling the booking functions.
-📌 Reminders:
-- Don't assume inputs. Always confirm.
-- If updating, ask clearly what user wants to change.
-- If user has existing bookings, offer to update or cancel.
-- If timeslot is full, show alternate times.
-- Parse dates correctly (assume 2025 if year not specified)
+**REQUIRED INFORMATION FOR BOOKINGS:**
+All booking tools require these parameters:
+- user_id (from user profile)
+- name (from user profile)  
+- city (from available cities)
+- center_address (from service centers in selected city)
+- car_model (from user profile or ask if missing)
+- date (YYYY-MM-DD format)
+- time_slot (from available timeslots)
 
+**ERROR HANDLING:**
+- If a booking fails, explain why and offer alternatives
+- If information is missing, ask for it specifically
+- If dates/times are unavailable, show available options
+- Always be helpful and solution-oriented
+
+**TOOLS AVAILABLE:**
+- get_cities_with_availability: Get all available cities with test drive availability
+- get_service_centers: Get centers in a specific city
+- get_available_timeslots: Get available slots for date/city
+- book_service_appointment: Book service appointment
+- book_test_drive: Book test drive
+- update_service_appointment: Update existing service booking
+- update_test_drive: Update existing test drive
+- cancel_service_appointment: Cancel service appointment
+- cancel_test_drive: Cancel test drive
+- get_user_service_bookings: View user's service bookings
+- get_user_test_drive_bookings: View user's test drive bookings
+- register_user: Register a new user
+
+**CONFIRMATION PROCESS:**
+Before booking, always confirm:
+"Let me confirm your booking details:
+👤 Name: [name]
+🚗 Car: [car_model]  
+📍 City: [city]
+🏢 Center: [center_name]
+📅 Date: [date]
+🕐 Time: [time_slot]
+
+Is this correct? Type 'YES' to confirm or let me know what to change."
+
+Remember: Lucid Motors offers premium electric vehicles (Lucid Air, Lucid Air Grand Touring, Lucid Gravity) with exceptional service experience.
 """
 
 prompt = ChatPromptTemplate.from_messages(
@@ -642,7 +865,7 @@ async def webhook(request: Request):
         from_number = form_data.get("From", "")
 
         # Extract user ID from phone number (remove whatsapp: prefix)
-        user_id = from_number.replace("whatsapp:", "")
+        user_id = _normalize_user_id(from_number)
 
         if not message_body:
             return Response(content="", media_type="text/plain")

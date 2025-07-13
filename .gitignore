@@ -8,6 +8,7 @@ __pycache__
 *.pyz
 *.pywz
 *.pyzw
-service_appointments.csv
+service_bookings.csv
 test_drive_bookings.csv
 test_bot.py
+conversations/*

@@ -70,7 +70,7 @@
                         },
                         {
                             "time": "13:00",
-                            "available": false
+                            "available": true
                         }
                     ]
                 }
@@ -107,7 +107,7 @@
             "name": "Lucid Motors Dammam Service Center",
             "address": "King Abdullah Bin Abdulaziz Road, Al Faisaliyah, Dammam 32271, Saudi Arabia",
             "working_hours": "09:00–17:00",
-            "offer_test_drive": false,
+            "offer_test_drive": true,
             "timeslots": []
         }
     ],
@@ -137,7 +137,7 @@
             "name": "Lucid Motors Medina Service Center",
             "address": "King Faisal Road, Qurban, Medina 42315, Saudi Arabia",
             "working_hours": "08:00–17:00",
-            "offer_test_drive": false,
+            "offer_test_drive": true,
             "timeslots": []
         }
     ],
@@ -158,7 +158,7 @@
                         },
                         {
                             "time": "16:00",
-                            "available": false
+                            "available": true
                         }
                     ]
                 }
@@ -171,7 +171,7 @@
             "name": "Lucid Motors Abha Service Center",
             "address": "King Abdulaziz Road, Al Khalidiyah, Abha 62571, Saudi Arabia",
             "working_hours": "09:00–18:00",
-            "offer_test_drive": false,
+            "offer_test_drive": true,
             "timeslots": []
         }
     ]
