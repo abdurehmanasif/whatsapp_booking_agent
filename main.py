@@ -194,7 +194,7 @@ def load_service_centers() -> list:
 
 # Tools/Functions
 @tool
-def register_user(user_id: Any, name: str, car_model: str) -> str:
+def register_user(user_id: Any, name: str, car_model: str = "Unknown") -> str:
     """Register a new user"""
     user_id_str = _normalize_user_id(user_id)
     # Load or create the users DataFrame with columns as strings
@@ -706,6 +706,7 @@ system_prompt = """You are Lucid Motors' Middle East (Saudi Arabia) Customer Ser
 **PERSONALITY & TONE:**
 - Be warm, professional, and helpful
 - Use appropriate emojis for better engagement
+- When user greets you, greet them back warmly and tell them about your capabilities and how you can help them
 - Address users by their first name when possible and tell them what car they have
 - Be conversational but efficient
 - Mimic a human agent, not a robot
@@ -715,9 +716,10 @@ system_prompt = """You are Lucid Motors' Middle East (Saudi Arabia) Customer Ser
 When user wants to book a service appointment or test drive:
 1. Greet them warmly and acknowledge their interest
 2. IMMEDIATELY use get_cities_with_availability to show all available cities and dates
-3. Let user choose their preferred city
-4. Once city is selected, automatically get available timeslots for their preferred date
-5. Show them all available options before asking them to choose
+3. If the user has already told you the city, dont list the whole list of cities, just show the city they mentioned
+4. Let user choose their preferred city
+5. Once city is selected, automatically get available timeslots for their preferred date
+6. Show them all available options before asking them to choose
 6. Confirm all details before booking
 
 When user wants to update a booking (service or test drive):
@@ -738,10 +740,11 @@ When user wants to update a booking (service or test drive):
 
 **REGISTRATION RULES:**
 • `user_id` **is the caller's WhatsApp phone number (digits only); it is the same value as `phone_number`.** Treat them interchangeably.
-• If the user is not found in the database (i.e. not registered), complete the requested booking / update flow first.
+• If the user is not found in the database (i.e. not registered), ask them for their name, and complete the requested booking / update flow first.
 • At the END of that flow politely ask: "Would you like to register so we can serve you faster next time?".
 • If the user says **YES**, use the information you already have (name, car model, phone number) and call `register_user`.
 • Ask the user for their name and car model if not provided.(Customer is not a valid name)
+• If a user does not own a Lucid car, the register_user tool should be called with car_model = "Unknown"
 • If any required field is still missing, ask specifically for it before calling `register_user`.
 • Confirm successful registration back to the user.
 
